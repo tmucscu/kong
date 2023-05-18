@@ -1,0 +1,6 @@
+**/__pycache__
+nohup.out
+
+env
+archive
+booking/bookings.json
