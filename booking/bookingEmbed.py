@@ -217,7 +217,7 @@ class BookingEmbed:
                             bookings.pop(date)
                         readableDate = await getReadableDateString(date)
                         deleteEmbed = discord.Embed(title=self.author + " has deleted the booking on " + readableDate +
-                                                    " from " + booking["start"] + " to " + booking["end"], colour=discord.Colour.orange())
+                                                    " from " + toReadableTime(booking["start"]) + " to " + toReadableTime(booking["end"]), colour=discord.Colour.orange())
                         await interaction.channel.send(embed=deleteEmbed)
                         await self.message.delete()
 
@@ -239,7 +239,7 @@ class BookingEmbed:
             for booking in bookingsFromUser[date]:
                 readableDate = await getReadableDateString(date)
                 bookingOptions.append(discord.SelectOption(
-                    label=readableDate + " - " + booking["start"] + " to " + booking["end"], value=date + " " + booking["start"]))
+                    label=readableDate + " - " + toReadableTime(booking["start"]) + " to " + toReadableTime(booking["end"]), value=date + " " + booking["start"]))
 
         if len(bookingOptions) == 0:
             # when there's no bookings to delete
