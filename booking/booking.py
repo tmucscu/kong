@@ -2,7 +2,6 @@ from datetime import datetime
 from helper.json_helper import readBookings, writeBookings
 from helper.time_helper import toReadableTime
 from helper.global_vars import *
-import discord
 
 
 class Booking():
