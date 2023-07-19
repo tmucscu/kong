@@ -1,11 +1,13 @@
 from datetime import datetime
 from helper.json_helper import readBookings, writeBookings
+from helper.time_helper import toReadableTime
 from helper.global_vars import *
 import discord
 
 
 class Booking():
     '''Booking class is the booking the user builds via the embeds in BookingEmbed'''
+
     def __init__(self):
         self.name, self.date, self.start, self.end, self.reason, self.availableTimes = None, None, None, None, None, None
 
@@ -40,7 +42,7 @@ class Booking():
             for hour in range(0, 24):
                 if hour >= now.hour:
                     self.availableTimes[hour] = [0, 15, 30, 45]
-                    
+
         # if booking not for today
         else:
             # Populate with all times
@@ -91,7 +93,7 @@ class Booking():
     async def getSuccessfulMessage(self):
         '''Returns the string message for the successful booking embed'''
         readableDateStr = await getReadableDateString(self.date)
-        return self.name + " has booked the office on " + readableDateStr + " from " + self.start + " to " + self.end + " " + self.reason
+        return self.name + " has booked the office on " + readableDateStr + " from " + toReadableTime(self.start) + " to " + toReadableTime(self.end) + " " + self.reason
 
     async def saveBookings(self):
         '''Saves booking to bookings json in the correct, chronological spot'''

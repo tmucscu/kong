@@ -7,6 +7,7 @@ import discord
 from datetime import datetime, timedelta
 
 from helper.json_helper import readBookings, writeBookings, getMemberName
+from helper.time_helper import toReadableTime
 from helper.global_vars import *
 from booking.booking import getCurrentBooking
 from booking.bookingEmbed import BookingEmbed
@@ -31,7 +32,7 @@ async def updateStatus():
             await client.change_presence(status=discord.Status.online, activity=discord.Game(name="Office is free!"))
 
         elif currentBooking != oldBooking:
-            await client.change_presence(status=discord.Status.dnd, activity=discord.Game(name=currentBooking["name"] + " until " + currentBooking["end"]))
+            await client.change_presence(status=discord.Status.dnd, activity=discord.Game(name=currentBooking["name"] + " until " + toReadableTime(currentBooking["end"])))
             oldBooking = currentBooking
 
         await asyncio.sleep(10)
@@ -48,11 +49,15 @@ async def on_ready():
     asyncio.ensure_future(updateStatus())
 
 # BADGE
+
+
 @client.tree.command(name="badge")
 async def badge(interaction: discord.Interaction):
     await interaction.response.send_message("Badge renewed", ephemeral=True)
 
 # HELP
+
+
 @client.command(name="help")
 async def help(ctx):
     helpMsg = "**Book Commands**\n**kong book**: book the office\n**kong delete**: delete a booking\n**kong all**: get all bookings\n"
@@ -61,6 +66,8 @@ async def help(ctx):
     await ctx.send(embed=embed)
 
 # BOOKING
+
+
 @client.command(name="book")
 async def book(ctx):
     bookingEmbed = BookingEmbed(ctx)
@@ -79,9 +86,12 @@ async def delete(ctx):
     await bookingEmbed.getDeleteEmbed()
 
 # VALORANT
+
+
 @client.command(name="valorant")
 async def valorant(ctx):
     await createValorantGame(ctx)
+
 
 @ client.event
 async def on_message(message):
