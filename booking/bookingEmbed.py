@@ -1,13 +1,16 @@
 from datetime import datetime, timedelta
 from booking.booking import Booking
 from helper.json_helper import readBookings, writeBookings, getMemberName
+from helper.time_helper import toReadableTime, toReadableHour, to24Hr
 from booking.booking import getReadableDateString, findFutureBookingsFromUser
 
 import discord
 from discord.ui import Select, View, Button
 
+
 class BookingEmbed:
     '''Booking embed class handles all the embed necessary to create a booking'''
+
     def __init__(self, ctx):
         self.ctx = ctx
         self.author = getMemberName(ctx.author)
@@ -63,7 +66,7 @@ class BookingEmbed:
         '''Sends the time picker embed. If object's start isn't defined, it'll send the start time picker. Otherwise the end time picker '''
         async def hourCallback(interaction):
             minuteOptions = []
-            selectedHour = int(hourSelect.values[0])
+            selectedHour = int(to24Hr(hourSelect.values[0]))
 
             # sort minutes to handle some cases where they get shuffled
             minutes = self.booking.availableTimes[selectedHour]
@@ -90,20 +93,21 @@ class BookingEmbed:
 
         async def buttonCallback(interaction):
             if (len(hourSelect.values) > 0 and len(minuteSelect.values) > 0):
-                if int(minuteSelect.values[0]) not in self.booking.availableTimes[int(hourSelect.values[0])]:
-                    # occurs when user changes hour but keeps minutes from the previously selected hour that isn't available for this hour
+                hourAs24Hr = to24Hr(hourSelect.values[0])
+                if int(minuteSelect.values[0]) not in self.booking.availableTimes[int(hourAs24Hr)]:
+                    # occurs when user changes hour but program keeps minutes from the previously selected hour that isn't available for this hour
                     await interaction.response.send_message("That time is not available for booking...", ephemeral=True)
                     return
 
                 if not self.booking.start:
                     # start time embed => call time picker embed again
-                    startTime = hourSelect.values[0]+":"+minuteSelect.values[0]
+                    startTime = hourAs24Hr+":"+minuteSelect.values[0]
                     self.booking.start = startTime
                     await self.booking.findAvailableEndTimes()
                     await self.getTimePickerEmbed()
                 else:
                     # end time embed => call reason embed
-                    endTime = hourSelect.values[0]+":"+minuteSelect.values[0]
+                    endTime = hourAs24Hr+":"+minuteSelect.values[0]
                     self.booking.end = endTime
                     await self.getReasonEmbed()
                 await interaction.response.defer()
@@ -124,11 +128,9 @@ class BookingEmbed:
         hourOptions = []
         for hour in self.booking.availableTimes:
             if len(self.booking.availableTimes[hour]) > 0:
-                hour = str(hour)
-                if len(hour) == 1:
-                    hour = "0" + hour
+                formattedHour = toReadableHour(hour)
                 hourOptions.append(
-                    discord.SelectOption(label=hour, value=hour))
+                    discord.SelectOption(label=formattedHour, value=formattedHour))
 
         minuteOptions = [
             discord.SelectOption(label="00", value="00"),
@@ -272,8 +274,9 @@ class BookingEmbed:
             if dateKey in bookings:
                 message += "**" + await getReadableDateString(dateKey) + "**\n"
                 for booking in bookings[dateKey]:
-                    message += booking["start"] + " to " + \
-                        booking["end"] + " for " + booking["name"] + "\n"
+                    message += toReadableTime(booking["start"]) + " to " + \
+                        toReadableTime(booking["end"]) + \
+                        " for " + booking["name"] + "\n"
                 message += "\n"
         embed = discord.Embed(title="Office Bookings",
                               description=message, colour=discord.Colour.orange())
