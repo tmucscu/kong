@@ -26,7 +26,7 @@ class Booking():
                 for minute in range(0, 60, 15):
                     tempDate = tempDate.replace(minute=minute)
                     # remove time if between booking's start and end times
-                    if minute in self.availableTimes[hour] and tempDate >= startDT and tempDate < endDT:
+                    if hour in self.availableTimes and minute in self.availableTimes[hour] and tempDate >= startDT and tempDate < endDT:
                         self.availableTimes[hour].remove(minute)
 
         bookings = readBookings()

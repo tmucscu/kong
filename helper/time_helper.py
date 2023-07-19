@@ -1,11 +1,8 @@
 def toReadableTime(time):
     '''Returns time from 24 hr format to 12 hr format'''
-    print(time)
     [hour, minute] = time.split(":")
-    print(hour, minute)
     readableHour = toReadableHour(int(hour))
     [hour, ending] = readableHour.split(" ")
-    print(hour, minute)
     return hour + ":" + minute + " " + ending
 
 
