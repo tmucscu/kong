@@ -171,6 +171,8 @@ class BookingEmbed:
             if len(reasonSelect.values) > 0:
                 # save booking
                 self.booking.reason = reasonSelect.values[0]
+                self.booking.canOthersCome = len(
+                    canOthersCome.values) > 0 and canOthersCome.values[0] == "yes"
                 await self.booking.saveBookings()
                 sendEmbed = discord.Embed(
                     title=await self.booking.getSuccessfulMessage(), colour=discord.Colour.orange())
@@ -188,15 +190,21 @@ class BookingEmbed:
                 label="study 📚", value="for studying"), discord.SelectOption(label="cscu office hour 🏢", value="for a cscu office hour"), discord.SelectOption(label="other 🤔", value="for some reason hmmmm")],
         )
 
+        canOthersCome = Select(placeholder="Can others come in?", options=[discord.SelectOption(
+            label="yes (quietly)", value="yes"), discord.SelectOption(label="no", value="no")])
+
         button = Button(style=discord.ButtonStyle.green,
                         label="Book")
 
         button.callback = buttonCallback
         reasonSelect.callback = selectCallback
+        canOthersCome.callback = selectCallback
 
         view = View()
         view.add_item(reasonSelect)
+        view.add_item(canOthersCome)
         view.add_item(button)
+
         await self.message.edit(embed=embed, view=view)
 
     async def getDeleteEmbed(self):
@@ -276,7 +284,10 @@ class BookingEmbed:
                 for booking in bookings[dateKey]:
                     message += toReadableTime(booking["start"]) + " to " + \
                         toReadableTime(booking["end"]) + \
-                        " for " + booking["name"] + "\n"
+                        " for " + booking["name"]
+                    if booking["canOthersCome"]:
+                        message += " [can come in]"
+                    message += "\n"
                 message += "\n"
         embed = discord.Embed(title="Office Bookings",
                               description=message, colour=discord.Colour.orange())

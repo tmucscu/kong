@@ -24,7 +24,15 @@ async def updateStatus():
             await client.change_presence(status=discord.Status.online, activity=discord.Game(name="Office is free!"))
 
         elif currentBooking != oldBooking:
-            await client.change_presence(status=discord.Status.dnd, activity=discord.Game(name=currentBooking["name"] + " until " + toReadableTime(currentBooking["end"])))
+            kongStatus = discord.Status.dnd
+            kongActivity = currentBooking["name"] + \
+                " until " + toReadableTime(currentBooking["end"])
+
+            if currentBooking["canOthersCome"]:
+                kongStatus = discord.Status.idle
+                kongActivity += " [can come in]"
+
+            await client.change_presence(status=kongStatus, activity=discord.Game(name=kongActivity))
             oldBooking = currentBooking
 
         await asyncio.sleep(10)
@@ -34,7 +42,7 @@ async def updateStatus():
 async def on_ready():
     print('Kong is logged in')
     try:
-        synched = await client.tree.sync()
+        synced = await client.tree.sync()
         print("Client synced")
     except Exception as e:
         print(e)

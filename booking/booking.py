@@ -8,7 +8,7 @@ class Booking():
     '''Booking class is the booking the user builds via the embeds in BookingEmbed'''
 
     def __init__(self):
-        self.name, self.date, self.start, self.end, self.reason, self.availableTimes = None, None, None, None, None, None
+        self.name, self.date, self.start, self.end, self.reason, self.canOthersCome, self.availableTimes = None, None, None, None, None, None, None
 
     async def findAvailableStartTimes(self):
         '''Sets availableTimes to available start times'''
@@ -92,13 +92,18 @@ class Booking():
     async def getSuccessfulMessage(self):
         '''Returns the string message for the successful booking embed'''
         readableDateStr = await getReadableDateString(self.date)
-        return self.name + " has booked the office on " + readableDateStr + " from " + toReadableTime(self.start) + " to " + toReadableTime(self.end) + " " + self.reason
+        msg = self.name + " has booked the office on " + readableDateStr + " from " + \
+            toReadableTime(self.start) + " to " + \
+            toReadableTime(self.end) + " " + self.reason
+        if self.canOthersCome:
+            msg += " [can come in]"
+        return msg
 
     async def saveBookings(self):
         '''Saves booking to bookings json in the correct, chronological spot'''
         bookings = readBookings()
         bookingObj = {"name": self.name, "start": self.start,
-                      "end": self.end, "reason": self.reason}
+                      "end": self.end, "reason": self.reason, "canOthersCome": self.canOthersCome}
         if self.date not in bookings.keys():
             bookings[self.date] = [bookingObj]
         else:
