@@ -20,7 +20,7 @@ class Booking():
                 self.date + " " + booking["end"], "%m/%d/%Y %H:%M")
             tempDate = datetime.strptime(self.date, "%m/%d/%Y")
 
-            for hour in range(0, 24):
+            for hour in range(6, 24):
                 tempDate = tempDate.replace(hour=hour)
                 for minute in range(0, 60, 15):
                     tempDate = tempDate.replace(minute=minute)
@@ -38,14 +38,14 @@ class Booking():
         if self.date == nowDate:
             # Populate available times w hours that are past or equal the current hour
             # don't alter minutes in case user wants to make booking right now (i.e 12:01 ==> user can book at 12:00 instead of waiting for 12:15)
-            for hour in range(0, 24):
+            for hour in range(6, 24):
                 if hour >= now.hour:
                     self.availableTimes[hour] = [0, 15, 30, 45]
 
         # if booking not for today
         else:
             # Populate with all times
-            for hour in range(0, 24):
+            for hour in range(6, 24):
                 self.availableTimes[hour] = [0, 15, 30, 45]
 
         # Remove times that are in bookings
