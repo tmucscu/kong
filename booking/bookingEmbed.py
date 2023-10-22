@@ -17,6 +17,10 @@ class BookingEmbed:
         self.booking = Booking()
         self.message = None
 
+    async def cancelCallback(self, interaction):
+        await interaction.response.defer()
+        await self.message.delete()
+
     async def getDatePickerEmbed(self):
         '''Sends the date picker embed'''
         async def dateCallback(interaction):
@@ -52,12 +56,15 @@ class BookingEmbed:
             options=dateOptions
         )
         button = Button(style=discord.ButtonStyle.green, label="Continue")
+        cancelButton = Button(style=discord.ButtonStyle.red, label="Cancel")
 
         dateSelect.callback = dateCallback
         button.callback = buttonCallback
+        cancelButton.callback = self.cancelCallback
 
         view = View()
         view.add_item(dateSelect)
+        view.add_item(cancelButton)
         view.add_item(button)
 
         self.message = await self.ctx.send(embed=embed, view=view)
@@ -150,14 +157,17 @@ class BookingEmbed:
 
         button = Button(style=discord.ButtonStyle.green,
                         label="Continue")
+        cancelButton = Button(style=discord.ButtonStyle.red, label="Cancel")
 
         hourSelect.callback = hourCallback
         minuteSelect.callback = minuteCallback
         button.callback = buttonCallback
+        cancelButton.callback = self.cancelCallback
 
         view = View()
         view.add_item(hourSelect)
         view.add_item(minuteSelect)
+        view.add_item(cancelButton)
         view.add_item(button)
 
         await self.message.edit(embed=embed, view=view)
@@ -195,14 +205,17 @@ class BookingEmbed:
 
         button = Button(style=discord.ButtonStyle.green,
                         label="Book")
+        cancelButton = Button(style=discord.ButtonStyle.red, label="Cancel")
 
         button.callback = buttonCallback
         reasonSelect.callback = selectCallback
         canOthersCome.callback = selectCallback
+        cancelButton.callback = self.cancelCallback
 
         view = View()
         view.add_item(reasonSelect)
         view.add_item(canOthersCome)
+        view.add_item(cancelButton)
         view.add_item(button)
 
         await self.message.edit(embed=embed, view=view)
@@ -238,6 +251,7 @@ class BookingEmbed:
                               description="Please select the booking you want to **delete**\n\nThis booking delete was requested by **" + self.author + "**", colour=discord.Colour.orange())
         button = Button(style=discord.ButtonStyle.red,
                         label="Delete")
+        cancelButton = Button(style=discord.ButtonStyle.red, label="Cancel")
 
         bookingsFromUser = await findFutureBookingsFromUser(self.author)
         bookingOptions = []
@@ -263,9 +277,11 @@ class BookingEmbed:
 
         button.callback = buttonCallback
         bookingSelect.callback = selectCallback
+        cancelButton.callback = self.cancelCallback
 
         view = View()
         view.add_item(bookingSelect)
+        view.add_item(cancelButton)
         view.add_item(button)
 
         self.message = await self.ctx.send(embed=embed, view=view)
