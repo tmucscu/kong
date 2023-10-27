@@ -1,6 +1,7 @@
 import json
 from helper.global_vars import *
 
+
 def getJSON(key):
     with open(key, "r") as json_file:
         bookings = json.load(json_file)
@@ -16,10 +17,20 @@ def getMembers():
     return getJSON("env/members.json")
 
 
+def getAllMemberIds():
+    members = getMembers()
+    allMembers = set()
+    for role in members:
+        for name in members[role]:
+            allMembers.add(name)
+
+    return list(allMembers)
+
+
 def getMemberName(user):
     members = getMembers()
     for role in members:
-        userId = str(user.id)
+        userId = str(user)
         if userId in members[role]:
             return members[role][userId]
 
@@ -32,3 +43,10 @@ def readBookings():
 
 def writeBookings(bookings):
     setJSON("booking/bookings.json", bookings)
+
+def readAnnouncements():
+    return getJSON("announcements/announcements.json")
+
+
+def writeAnnouncements(announcements):
+    setJSON("announcements/announcements.json", announcements)
