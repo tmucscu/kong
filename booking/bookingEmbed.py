@@ -13,7 +13,7 @@ class BookingEmbed:
 
     def __init__(self, ctx):
         self.ctx = ctx
-        self.author = getMemberName(ctx.author)
+        self.author = getMemberName(ctx.author.id)
         self.booking = Booking()
         self.message = None
 

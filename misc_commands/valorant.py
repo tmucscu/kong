@@ -1,3 +1,6 @@
+import random
+
+
 async def createValorantGame(ctx):
     '''Creates a valorant lobby with the users in the call'''
     try:
@@ -20,7 +23,8 @@ async def createValorantGame(ctx):
                 addToAttackers = True
 
         # choose a map
-        lobbyMap = random.choice(["Bind", "Haven", "Split","Ascent","Icebox","Breeze","Fracture","Pearl", "Lotus"])
+        lobbyMap = random.choice(
+            ["Bind", "Haven", "Split", "Ascent", "Icebox", "Breeze", "Fracture", "Pearl", "Lotus"])
 
         # build output message
         lobby = "**Valorant Custom Lobby**\nMap: " + lobbyMap + "\nAttackers: "
@@ -31,7 +35,7 @@ async def createValorantGame(ctx):
         for member in defenders:
             lobby += member + ", "
         lobby = lobby[:-2]
-        
+
         await ctx.send(lobby)
-    except :
+    except:
         await ctx.send("Please join a call")
