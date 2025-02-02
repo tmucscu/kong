@@ -27,6 +27,12 @@ def getAllMemberIds():
     return list(allMembers)
 
 
+def getDeveloperIds():
+    members = getMembers()
+
+    return list(members["Developers"])
+
+
 def getMemberName(user):
     members = getMembers()
     for role in members:
@@ -37,6 +43,10 @@ def getMemberName(user):
     return None
 
 
+def updateMembers(members):
+    setJSON("env/members.json", members)
+
+
 def readBookings():
     return getJSON("booking/bookings.json")
 
@@ -44,9 +54,18 @@ def readBookings():
 def writeBookings(bookings):
     setJSON("booking/bookings.json", bookings)
 
+
 def readAnnouncements():
     return getJSON("announcements/announcements.json")
 
 
 def writeAnnouncements(announcements):
     setJSON("announcements/announcements.json", announcements)
+
+
+def readTacos():
+    return getJSON("taco/tacos.json")
+
+
+def writeTacos(tacos):
+    setJSON("taco/tacos.json", tacos)

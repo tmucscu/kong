@@ -5,3 +5,5 @@ env
 archive
 booking/bookings.json
 announcements/announcements.json
+kong.log
+taco/tacos.json

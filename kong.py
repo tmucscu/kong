@@ -1,14 +1,18 @@
 from discord.ext import commands, tasks
 from discord.utils import get
 import discord
-
+import os
 from datetime import datetime
-from helper.json_helper import getJSON, readAnnouncements, writeAnnouncements, getAllMemberIds
+from helper.json_helper import getJSON, readAnnouncements, writeAnnouncements, getAllMemberIds, getDeveloperIds, getMemberName
 from helper.time_helper import toReadableTime
+from helper.member_helpers import *
 from helper.global_vars import *
 from booking.booking import getCurrentBooking
 from booking.bookingEmbed import BookingEmbed
 from announcements.announcements import getShameMessage
+from datetime import datetime
+from taco.taco import giveTaco, getTacos, getUserTacos
+
 
 from misc_commands.valorant import createValorantGame
 import asyncio
@@ -22,15 +26,24 @@ client = commands.Bot(
 
 env = getJSON("env/env.json")
 
+acceptedEmojis = ["✅", "❌", "1️⃣", "2️⃣", "3️⃣"]
+
 
 async def updateStatus():
+    await client.wait_until_ready()
+
     oldBooking = None
-    while True:
+
+    while not client.is_closed():
         currentBooking = await getCurrentBooking()
+
         if currentBooking is None:
-            await client.change_presence(status=discord.Status.online, activity=discord.Game(name="Office is free!"))
+            if oldBooking is not None:
+                await client.change_presence(status=discord.Status.online, activity=discord.Game(name="Office is free!"))
+            oldBooking = None
 
         elif currentBooking != oldBooking:
+            print("new booking found", currentBooking)
             kongStatus = discord.Status.dnd
             kongActivity = currentBooking["name"] + \
                 " until " + toReadableTime(currentBooking["end"])
@@ -46,6 +59,7 @@ async def updateStatus():
 
 
 async def wallOfShame():
+    await client.wait_until_ready()
     # post at 11 AM everyday
     postedToday = False
     while True:
@@ -68,10 +82,12 @@ async def on_ready():
     try:
         synced = await client.tree.sync()
         print("Client synced")
+        await client.change_presence(status=discord.Status.online, activity=discord.Game(name="Office is free!"))
     except Exception as e:
         print(e)
-    asyncio.ensure_future(updateStatus())
-    asyncio.ensure_future(wallOfShame())
+
+    client.loop.create_task(updateStatus())
+    client.loop.create_task(wallOfShame())
 # BADGE
 
 
@@ -117,6 +133,70 @@ async def valorant(ctx):
     await createValorantGame(ctx)
 
 
+@client.command(name="member")
+async def member(ctx):
+    if not str(ctx.message.author.id) == "360233756738584576":
+        await ctx.send("Only the System Admin can Add and Remove members")
+        return
+
+    words = ctx.message.content.split(" ")
+    if words[2] == "add":
+        addMember(words[3], words[4])
+        await ctx.send("Added member " + words[4] + " with ID " + words[3])
+
+    elif words[2] == "remove":
+        removeMember(words[3])
+        await ctx.send("Removed member " + words[3])
+    elif words[2] == "list":
+        members = listMembers()
+        await ctx.send("Members:\n" + members)
+
+# TACO
+
+
+@client.command(name="taco")
+async def taco(ctx):
+    words = ctx.message.content.split(" ")
+    print(ctx.message.mentions)
+    if len(words) == 2:
+        # show leadboard
+        await ctx.send(await getTacos())
+
+    if len(words) == 3:
+        if len(ctx.message.mentions) > 0:
+            await ctx.send("Please add a reason for the taco!")
+            return
+        await ctx.send(await getUserTacos(words[2]))
+
+    if len(ctx.message.mentions) >= 1:
+        giverName = ctx.message.author.nick or ctx.message.author.name
+
+        for user in ctx.message.mentions:
+            name = user.nick or user.name
+            if name == giverName:
+                await ctx.send("You cannot give yourself a taco!")
+                return
+
+        now = datetime.now()
+        date = now.strftime("%m-%d-%Y")
+        message = "**" + giverName + "** gave a 🌮 to "
+        # give a taco
+        reason = ""
+        for word in words[2:]:
+            if "<@" not in word:
+                reason += word + " "
+
+        for user in ctx.message.mentions:
+            name = user.nick or user.name
+            if not giverName or not name or not reason or not date:
+                await ctx.send("Error giving this taco. Please try again!")
+                continue
+            message += "**" + name + "**, "
+            await giveTaco(giverName, name, reason[:-1], date)
+
+        await ctx.send(message[:-2] + " because they " + reason + " 👏👏")
+
+
 @ client.event
 async def on_message(message):
     await client.process_commands(message)
@@ -124,7 +204,8 @@ async def on_message(message):
 
 @ client.event
 async def on_raw_reaction_add(payload):
-    if (payload.emoji.name == "kongannounce"):
+    developers = getDeveloperIds()
+    if (payload.emoji.name == "kongannounce" and str(payload.user_id) in developers):
         try:
             announces = readAnnouncements()
         except:
@@ -135,7 +216,6 @@ async def on_raw_reaction_add(payload):
         if (messageId in announces):
             announces[messageId]["enabled"] = True
         else:
-            members = getAllMemberIds()
             # get discord msg object
             channel_id = payload.channel_id
             guild = client.get_guild(payload.guild_id)
@@ -144,7 +224,7 @@ async def on_raw_reaction_add(payload):
 
             # build announcement object
             announces[messageId] = {
-                "enabled": True, "toReact": members, "url": discordMsg.jump_url}
+                "enabled": True, "reacts": {}, "url": discordMsg.jump_url}
 
             await discordMsg.add_reaction("✅")
             await discordMsg.add_reaction("❌")
@@ -152,13 +232,17 @@ async def on_raw_reaction_add(payload):
         writeAnnouncements(announces)
 
     # only valid reactions to announcement is checkmark and cross
-    if ((payload.emoji.name == "✅" or payload.emoji.name == "❌") and payload.user_id != env["KONG_ID"]):
+    if ((payload.emoji.name in acceptedEmojis) and payload.user_id != env["KONG_ID"]):
         announces = readAnnouncements()
         messageId = str(payload.message_id)
         if (messageId in announces):
             try:
                 # remove the user from users that need to react
-                announces[messageId]["toReact"].remove(str(payload.user_id))
+                userId = str(payload.user_id)
+                if userId in announces[messageId]["reacts"]:
+                    announces[messageId]["reacts"][userId] += 1
+                else:
+                    announces[messageId]["reacts"][userId] = 1
                 writeAnnouncements(announces)
             except:
                 print("Error adding reaction")
@@ -166,7 +250,7 @@ async def on_raw_reaction_add(payload):
 
 @ client.event
 async def on_raw_reaction_remove(payload):
-    if (payload.emoji.name == "kongannounce"):
+    if (payload.emoji.name == "kongannounce" and getMemberName(payload.user_id) == "Jason"):
         # soft delete announcement object in case user wants to re-enable
         announces = readAnnouncements()
         messageId = str(payload.message_id)
@@ -174,12 +258,18 @@ async def on_raw_reaction_remove(payload):
             announces[messageId]["enabled"] = False
             writeAnnouncements(announces)
 
-    if (payload.emoji.name == "✅" or payload.emoji.name == "❌"):
+    if (payload.emoji.name in acceptedEmojis):
         # add user back to users that need to react if they unreact
         announces = readAnnouncements()
         messageId = str(payload.message_id)
         if (messageId in announces):
-            announces[messageId]["toReact"].append(str(payload.user_id))
+            reactions = announces[messageId]["reacts"]
+            userId = str(payload.user_id)
+
+            if (reactions[userId] == 1):
+                del reactions[userId]
+            else:
+                reactions[userId] -= 1
             writeAnnouncements(announces)
 
 client.run(TOKEN)

@@ -1,4 +1,4 @@
-from helper.json_helper import readAnnouncements, getMemberName
+from helper.json_helper import readAnnouncements, getMemberName, getAllMemberIds
 
 
 """
@@ -14,9 +14,12 @@ def getShameMessage():
     for messageId in announces:
         if (announces[messageId]["enabled"]):
             shameMessage += announces[messageId]["url"] + "\n```"
-            for memberId in announces[messageId]["toReact"]:
-                names.add(getMemberName(memberId))
-                empty = False
+            allMemberIds = getAllMemberIds()
+
+            for memberId in allMemberIds:
+                if memberId not in announces[messageId]["reacts"]:
+                    names.add(getMemberName(memberId))
+                    empty = False
 
             for member in sorted(list(names)):
                 shameMessage += member + ", "
