@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  kong-bot:
+    build: .
+    container_name: kong-bot
+    restart: always
+    environment:
+      - .env
+    volumes:
+      - ./logs:/app/logs
+    command: ["python", "-u", "kong.py"]
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
