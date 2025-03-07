@@ -42,6 +42,6 @@ async def getUserTacos(name):
         return name + " has NO tacos"
     
     for taco in tacos[name]:
-        message += taco["date"] + ": " + taco["reason"] + " from " + taco["giver"] + "\n"
+        message += "```" + taco["date"] + ": " + taco["reason"] + " from " + taco["giver"] + "```"
     
     return message
