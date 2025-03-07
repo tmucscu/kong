@@ -27,6 +27,6 @@ jobs:
         port: ${{ secrets.SSH_PORT }}
         script: |
           cd /home/andrae/kong
-          git pull origin deploy
-          docker-compose down
-          docker-compose up -d --build
+          sudo git pull origin deploy
+          sudo docker-compose down
+          sudo docker-compose up -d --build
