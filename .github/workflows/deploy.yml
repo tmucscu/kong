@@ -1,0 +1,45 @@
+name: Deploy Kong Bot
+
+on:
+  push:
+    branches:
+      - deploy
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v3
+
+    - name: Install VPN on GitHub Actions Runner
+      run: |
+        curl -fsSL https://tailscale.com/install.sh | sh
+        sudo tailscale up --authkey=${{ secrets.TAILSCALE_AUTHKEY }} --ssh
+
+    - name: Deploy via SSH
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.TAILSCALE_IP }}
+        username: ${{ secrets.SERVER_USER }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        port: ${{ secrets.SSH_PORT }}
+        script: |
+          cd /home/andrae/kong
+          sudo git pull origin deploy
+          sudo docker-compose down
+          sudo docker-compose up -d --build
+
+    - name: Get Action Runner Machine Name and IP
+      run: |
+        MACHINE_IP=$(tailscale ip -4)
+        MACHINE_NAME=$(tailscale status | grep "$MACHINE_IP" | awk '{print $2}')
+        echo "MACHINE_NAME=$MACHINE_NAME" >> $GITHUB_ENV
+
+    - name: Delete VPN Client After Deployment
+      if: always()
+      run: |
+        curl -X DELETE \
+          -H "Authorization: Bearer ${{ secrets.TAILSCALE_API_KEY }}" \
+          "https://api.tailscale.com/api/v2/device/$MACHINE_NAME"
