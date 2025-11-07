@@ -45,3 +45,7 @@ async def getUserTacos(name):
         message += "```" + taco["date"] + ": " + taco["reason"] + " from " + taco["giver"] + "```"
     
     return message
+
+async def resetTacos():
+    writeTacos({})
+    return "🌮 Taco data has been reset!"
