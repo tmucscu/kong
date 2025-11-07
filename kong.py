@@ -197,7 +197,7 @@ async def taco(ctx):
         await ctx.send(message[:-2] + " because they " + reason + " 👏👏")
 
 @client.command(name="tacoReset")
-async def resetTacos(ctx):
+async def tacoReset(ctx):
     if not str(ctx.message.author.id) == "596920297731522596":
         await ctx.send("Only the System Admin can reset tacos")
         return
