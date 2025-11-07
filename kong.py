@@ -11,7 +11,7 @@ from booking.booking import getCurrentBooking
 from booking.bookingEmbed import BookingEmbed
 from announcements.announcements import getShameMessage
 from datetime import datetime
-from taco.taco import giveTaco, getTacos, getUserTacos
+from taco.taco import giveTaco, getTacos, getUserTacos, resetTacos
 
 
 from misc_commands.valorant import createValorantGame
@@ -196,6 +196,14 @@ async def taco(ctx):
 
         await ctx.send(message[:-2] + " because they " + reason + " 👏👏")
 
+@client.command(name="tacoReset")
+async def resetTacos(ctx):
+    if not str(ctx.message.author.id) == "596920297731522596":
+        await ctx.send("Only the System Admin can reset tacos")
+        return
+
+    message = await resetTacos()
+    await ctx.send(message)
 
 @ client.event
 async def on_message(message):
