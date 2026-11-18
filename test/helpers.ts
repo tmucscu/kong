@@ -58,6 +58,20 @@ export function command(name: string, opts: { userId?: string; admin?: boolean; 
   };
 }
 
+/** A pick from a string select menu (message component) by `userId`, optionally with Manage Server. */
+export function selectMenu(customId: string, values: string[], opts: { userId?: string; admin?: boolean } = {}) {
+  return {
+    type: 3,
+    id: "2",
+    token: "token",
+    application_id: "app",
+    guild_id: "guild",
+    member: { user: { id: opts.userId ?? "100" }, permissions: opts.admin ? String(1n << 5n) : "0" },
+    message: { id: "m", flags: 64 },
+    data: { custom_id: customId, component_type: 3, values },
+  };
+}
+
 export async function reply(response: Response): Promise<Reply> {
   return (await response.json()) as Reply;
 }

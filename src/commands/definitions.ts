@@ -11,6 +11,7 @@ const seasonOption = {
 export const definitions = [
   { name: "ping", description: "Check that Kong is alive" },
   { name: "bookings", description: "Show the Office bookings for the next 8 days" },
+  { name: "unbook", description: "Delete one of your office bookings" },
   {
     name: "taco",
     description: "Give members tacos",

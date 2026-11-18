@@ -38,7 +38,8 @@ export function createApp(deps: Partial<AppDeps> = {}) {
     }
 
     if (interaction.type === InteractionType.MessageComponent) {
-      const handler = components[interaction.data.custom_id];
+      // A custom_id is "<handler>" or "<handler>:<state...>"; flows that carry state use the second form.
+      const handler = components[interaction.data.custom_id.split(":")[0]];
       if (handler) return c.json(await handler(interaction, { env: c.env, now: now() }));
     }
 

@@ -6,7 +6,7 @@
 
 **Status:** ready-for-agent
 
-- [ ] Members see only their own future Bookings; Admins (Manage Server) see all
-- [ ] With nothing to delete, a clear message is shown
-- [ ] Public announcement names who deleted which Booking, noting when an Admin removed someone else's
-- [ ] A Member cannot delete another Member's Booking by replaying a request
+- [x] Members see only their own future Bookings; Admins (Manage Server) see all
+- [x] With nothing to delete, a clear message is shown
+- [x] Public announcement names who deleted which Booking, noting when an Admin removed someone else's
+- [x] A Member cannot delete another Member's Booking by replaying a request
