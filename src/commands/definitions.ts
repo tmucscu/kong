@@ -34,4 +34,24 @@ export const definitions = [
       },
     ],
   },
+  {
+    // Hidden from people without Manage Server (32); the Worker checks `isAdmin` as well.
+    name: "taco-admin",
+    description: "Admin tools for tacos",
+    default_member_permissions: "32",
+    options: [
+      {
+        type: 1,
+        name: "new-season",
+        description: "End the current season and start the next one",
+        options: [{ type: 3, name: "name", description: "Optional name, e.g. Winter 2027", max_length: 50 }],
+      },
+      {
+        type: 1,
+        name: "remove",
+        description: "Remove one of a member's tacos this season",
+        options: [{ type: 6, name: "user", description: "Whose taco to remove", required: true }],
+      },
+    ],
+  },
 ] satisfies RESTPostAPIChatInputApplicationCommandsJSONBody[];

@@ -133,6 +133,12 @@ export function seasonAutocomplete(subcommand: string, typed = "") {
   };
 }
 
+/** A `/taco-admin <subcommand>` invocation. */
+export function tacoAdmin(subcommand: string, opts: { admin?: boolean; from?: string; options?: object[] } = {}) {
+  const base = command("taco-admin", { userId: opts.from, admin: opts.admin });
+  return { ...base, data: { ...base.data, options: [{ name: subcommand, type: 1, options: opts.options ?? [] }] } };
+}
+
 /** A string-select choice made on a message (component_type 3). */
 export function selectChoice(customId: string, values: string[], opts: { userId?: string; admin?: boolean } = {}) {
   return {

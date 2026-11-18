@@ -110,9 +110,10 @@ async function history(sub: Sub, { env, now }: CommandContext): Promise<Interact
     .orderBy(desc(tacos.date), desc(tacos.id));
 
   if (!rows.length) {
+    const when = season.endedAt === null ? "this season" : `in Season ${season.number}`;
     return {
       type: InteractionResponseType.ChannelMessageWithSource,
-      data: { content: `<@${userId}> has no tacos this season`, allowed_mentions: { parse: [] } },
+      data: { content: `<@${userId}> has no tacos ${when}`, allowed_mentions: { parse: [] } },
     };
   }
 

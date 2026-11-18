@@ -7,6 +7,6 @@
 **Status:** ready-for-agent
 
 - [ ] Both commands are hidden from non-Admins in Discord and also rejected by the Worker if a non-Admin sends them
-- [ ] A new Season gets the next number and an optional name; the leaderboard then starts empty
-- [ ] Removing a Taco asks the Admin to choose from a select and is announced or logged
-- [ ] Old Seasons stay viewable after a new one starts
+- [x] A new Season gets the next number and an optional name; the leaderboard then starts empty
+- [x] Removing a Taco asks the Admin to choose from a select and is announced or logged
+- [x] Old Seasons stay viewable after a new one starts
