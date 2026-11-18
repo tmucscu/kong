@@ -6,7 +6,7 @@
 
 **Status:** ready-for-agent
 
-- [ ] Booking table with a migration, keyed to Discord user IDs
-- [ ] `/bookings` lists the next 8 days; an empty week shows a clear "office is free" message
-- [ ] Mentions render as current server nicknames and ping nobody
-- [ ] Verified against seeded rows, including a day with several Bookings in chronological order
+- [x] Booking table with a migration, keyed to Discord user IDs
+- [x] `/bookings` lists the next 8 days; an empty week shows a clear "office is free" message
+- [x] Mentions render as current server nicknames and ping nobody
+- [x] Verified against seeded rows, including a day with several Bookings in chronological order

@@ -6,7 +6,12 @@ export interface InteractionResponse {
   data?: Record<string, unknown>;
 }
 
+export interface CommandContext {
+  env: Bindings;
+  now: Date;
+}
+
 export type CommandHandler = (
   interaction: APIChatInputApplicationCommandInteraction,
-  env: Bindings,
+  ctx: CommandContext,
 ) => InteractionResponse | Promise<InteractionResponse>;

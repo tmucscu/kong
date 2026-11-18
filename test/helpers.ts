@@ -32,3 +32,48 @@ export async function send(payload: object, deps?: Partial<AppDeps>) {
 }
 
 export const ping = { type: InteractionType.Ping };
+
+export interface Reply {
+  type: number;
+  data?: {
+    content?: string;
+    flags?: number;
+    embeds?: { title?: string; description?: string }[];
+    allowed_mentions?: { parse?: string[] };
+  };
+}
+
+/** A slash command invocation by `userId`, optionally with Manage Server. */
+export function command(name: string, opts: { userId?: string; admin?: boolean; options?: object[] } = {}) {
+  return {
+    type: 2,
+    id: "1",
+    token: "token",
+    application_id: "app",
+    guild_id: "guild",
+    member: { user: { id: opts.userId ?? "100" }, permissions: opts.admin ? String(1n << 5n) : "0" },
+    data: { id: "c", name, type: 1, options: opts.options ?? [] },
+  };
+}
+
+export async function reply(response: Response): Promise<Reply> {
+  return (await response.json()) as Reply;
+}
+
+/** 2026-11-18 12:00 in Toronto (EST, UTC-5). */
+export const NOW = () => new Date("2026-11-18T17:00:00Z");
+
+export async function seedBooking(b: {
+  userId: string;
+  date: string;
+  start: string;
+  end: string;
+  othersCanCome?: boolean;
+  reason?: string;
+}) {
+  await env.DB.prepare(
+    "INSERT INTO bookings (user_id, date, start, end, reason, others_can_come) VALUES (?, ?, ?, ?, ?, ?)",
+  )
+    .bind(b.userId, b.date, b.start, b.end, b.reason ?? null, b.othersCanCome ? 1 : 0)
+    .run();
+}

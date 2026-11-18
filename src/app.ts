@@ -6,9 +6,12 @@ import { commands } from "./commands";
 import type { Bindings } from "./env";
 
 // Outbound dependencies (Discord REST) are injected so tests can replace them.
-export interface AppDeps {}
+export interface AppDeps {
+  now: () => Date;
+}
 
-export function createApp(_deps: Partial<AppDeps> = {}) {
+export function createApp(deps: Partial<AppDeps> = {}) {
+  const now = deps.now ?? (() => new Date());
   const app = new Hono<{ Bindings: Bindings }>();
 
   app.post("/interactions", async (c) => {
@@ -26,7 +29,7 @@ export function createApp(_deps: Partial<AppDeps> = {}) {
 
     if (interaction.type === InteractionType.ApplicationCommand) {
       const handler = commands[interaction.data.name];
-      if (handler) return c.json(await handler(interaction as never, c.env));
+      if (handler) return c.json(await handler(interaction as never, { env: c.env, now: now() }));
     }
 
     return c.text("unsupported interaction", 400);

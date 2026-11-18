@@ -1,4 +1,5 @@
+import { bookings } from "./bookings";
 import { ping } from "./ping";
 import type { CommandHandler } from "./types";
 
-export const commands: Record<string, CommandHandler> = { ping };
+export const commands: Record<string, CommandHandler> = { ping, bookings };
