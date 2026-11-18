@@ -19,6 +19,14 @@ const cancelButton = { type: ComponentType.Button, style: ButtonStyle.Danger, la
 
 const hourLabel = (hour: number) => formatTime(`${String(hour).padStart(2, "0")}:00`).replace(":00", "");
 
+/** Goes back to the screen named by `screen` ("date", or "sh:<date>[:<hour>]"). */
+const backButton = (screen: string) => ({
+  type: ComponentType.Button,
+  style: ButtonStyle.Secondary,
+  label: "Back",
+  custom_id: `book:back:${screen}`,
+});
+
 function localNow({ env, now }: CommandContext): LocalNow {
   return { date: todayIn(env.TIMEZONE, now), time: timeIn(env.TIMEZONE, now) };
 }
@@ -27,12 +35,16 @@ async function spansOn(ctx: CommandContext, date: string): Promise<Span[]> {
   return drizzle(ctx.env.DB).select({ start: bookings.start, end: bookings.end }).from(bookings).where(eq(bookings.date, date));
 }
 
+const EXPIRED = "That booking flow has expired. Run /book to start again.";
+const TAKEN = "Sorry, that time is no longer free. Run /book to pick another time.";
+const TIME_ID = /^\d{4}$/;
+
+/** Today plus the following days, in the Office's time zone. */
+const offeredDays = (ctx: CommandContext) =>
+  Array.from({ length: DAYS_OFFERED }, (_, i) => addDays(localNow(ctx).date, i));
+
 function dateScreen(ctx: CommandContext) {
-  const today = localNow(ctx).date;
-  const options = Array.from({ length: DAYS_OFFERED }, (_, i) => addDays(today, i)).map((d) => ({
-    value: d,
-    label: formatDay(d),
-  }));
+  const options = offeredDays(ctx).map((d) => ({ value: d, label: formatDay(d) }));
   return {
     content: "Which day do you want to book the Office?",
     components: [
@@ -65,7 +77,7 @@ async function startHourScreen(ctx: CommandContext, date: string, hour?: string)
     components: [
       row({ type: ComponentType.StringSelect, custom_id: `book:sh:${date}`, placeholder: "Pick an hour", options }),
       ...(hour ? [minuteButtons(`book:sm:${date}`, hour, starts)] : []),
-      row(cancelButton),
+      row(backButton("date"), cancelButton),
     ],
   };
 }
@@ -85,7 +97,7 @@ async function endHourScreen(ctx: CommandContext, date: string, start: string, h
     components: [
       row({ type: ComponentType.StringSelect, custom_id: `book:eh:${date}:${start}`, placeholder: "Pick an hour", options }),
       ...(hour ? [minuteButtons(`book:em:${date}:${start}`, hour, ends)] : []),
-      row(cancelButton),
+      row(backButton(`sh:${date}:${start.slice(0, 2)}`), cancelButton),
     ],
   };
 }
@@ -156,9 +168,10 @@ async function saveBooking(interaction: APIModalSubmitInteraction, ctx: CommandC
   const fields = modalFields(interaction);
   const userId = interaction.member!.user.id;
 
-  if (!isBookable(date, await spansOn(ctx, date), start, end, localNow(ctx))) {
-    return refuse("Sorry, that time overlaps another booking. Run /book to pick another time.");
+  if (!offeredDays(ctx).includes(date) || !TIME_ID.test(startId ?? "") || !TIME_ID.test(endId ?? "")) {
+    return refuse(EXPIRED);
   }
+  if (!isBookable(date, await spansOn(ctx, date), start, end, localNow(ctx))) return refuse(TAKEN);
 
   const reason = REASONS.find(([value]) => value === fields.reason);
   const note = fields.note?.trim() || null;
@@ -180,15 +193,40 @@ async function saveBooking(interaction: APIModalSubmitInteraction, ctx: CommandC
 export const bookInteraction: ComponentHandler = async (interaction, ctx) => {
   if (interaction.type === InteractionType.ModalSubmit) return saveBooking(interaction as APIModalSubmitInteraction, ctx);
   const click = interaction as APIMessageComponentInteraction;
-  const [, step, date, start, end] = click.data.custom_id.split(":");
+  // Ephemeral messages are already private; this also guards when Discord says who the message was for.
+  const owner = click.message?.interaction_metadata?.user?.id;
+  if (owner && owner !== click.member?.user.id) return refuse("This isn't your booking. Run /book to start your own.");
+  const [, step, ...args] = click.data.custom_id.split(":");
   const values = (click.data as { values?: string[] }).values ?? [];
 
-  if (step === "date") return update(await startHourScreen(ctx, values[0]));
+  if (step === "cancel") return update({ content: "Booking cancelled. Nothing was saved.", components: [] });
+  if (step === "back" && args[0] === "date") return update(dateScreen(ctx));
+
+  // Every other step carries a day (and possibly times) that may have gone stale since the message was drawn.
+  const date = step === "date" ? values[0] : step === "back" ? args[1] : args[0];
+  const [start, end] = ["sm", "eh", "em"].includes(step) ? args.slice(1) : [];
+  const wellFormed =
+    ["date", "sh", "sm", "eh", "em", "back"].includes(step) &&
+    (step !== "back" || args[0] === "sh") &&
+    (start === undefined || TIME_ID.test(start)) &&
+    (step !== "em" || TIME_ID.test(end ?? ""));
+  if (!wellFormed || !offeredDays(ctx).includes(date)) return refuse(EXPIRED);
+
+  const spans = await spansOn(ctx, date);
+  const now = localNow(ctx);
+  if (step === "back") return update(await startHourScreen(ctx, date, args[2]));
+  if (step === "date") return update(await startHourScreen(ctx, date));
   if (step === "sh") return update(await startHourScreen(ctx, date, values[0]));
-  if (step === "sm") return update(await endHourScreen(ctx, date, start));
-  if (step === "eh") return update(await endHourScreen(ctx, date, start, values[0]));
-  if (step === "em") return detailsModal(date, start, end);
-  throw new Error("not implemented");
+  if (step === "sm") {
+    if (!freeStarts(date, spans, now).includes(clock(start))) return refuse(TAKEN);
+    return update(await endHourScreen(ctx, date, start));
+  }
+  if (step === "eh") {
+    if (!freeStarts(date, spans, now).includes(clock(start))) return refuse(TAKEN);
+    return update(await endHourScreen(ctx, date, start, values[0]));
+  }
+  if (!isBookable(date, spans, clock(start), clock(end), now)) return refuse(TAKEN);
+  return detailsModal(date, start, end);
 };
 
 const update = (data: object): InteractionResponse => ({

@@ -5,6 +5,259 @@ const hourOptions = (body: Awaited<ReturnType<typeof reply>>, customId: string) 
     .find((c) => c.custom_id === customId)
     .options.map((o: { value: string; label: string }) => [o.value, o.label]);
 
+const bookings = async () => (await reply(await send(command("bookings"), { now: NOW }))).data?.embeds?.[0]?.description;
+
+describe("/book Cancel", () => {
+  it("replaces the message with a short note, removes every component and saves nothing", async () => {
+    const body = await reply(await send(componentClick("book:cancel"), { now: NOW }));
+
+    expect(body.type).toBe(7);
+    expect(body.data?.content).toBe("Booking cancelled. Nothing was saved.");
+    expect(body.data?.components).toEqual([]);
+    expect(await bookings()).toBe("The office is free all week!");
+  });
+});
+
+/** Drives the flow the way a person does: only through what the previous reply offered. */
+async function startFlow(userId = "100") {
+  const now = { now: NOW };
+  let body = await reply(await send(command("book", { userId }), now));
+  const find = (match: (c: any) => boolean) => allComponents(body).find(match);
+  return {
+    get body() {
+      return body;
+    },
+    ids: () => allComponents(body).map((c) => c.custom_id).filter(Boolean) as string[],
+    async pick(customId: string, value: string) {
+      expect(find((c) => c.custom_id === customId), `select ${customId}`).toBeDefined();
+      body = await reply(await send(componentClick(customId, { userId, values: [value] }), now));
+    },
+    async press(label: string) {
+      const button = find((c) => c.label === label && !c.disabled);
+      expect(button, `button ${label}`).toBeDefined();
+      body = await reply(await send(componentClick(button.custom_id, { userId }), now));
+    },
+  };
+}
+
+describe("/book Back", () => {
+  it("is offered on every step except the first, alongside Cancel", async () => {
+    const flow = await startFlow();
+    const screens: string[][] = [flow.ids()];
+    await flow.pick("book:date", "2026-11-20");
+    screens.push(flow.ids());
+    await flow.pick("book:sh:2026-11-20", "14");
+    screens.push(flow.ids());
+    await flow.press(":30");
+    screens.push(flow.ids());
+    await flow.pick("book:eh:2026-11-20:1430", "16");
+    screens.push(flow.ids());
+
+    for (const ids of screens) expect(ids).toContain("book:cancel");
+    expect(screens[0].some((id) => id.startsWith("book:back:"))).toBe(false);
+    for (const ids of screens.slice(1)) expect(ids.some((id) => id.startsWith("book:back:"))).toBe(true);
+  });
+
+  it("from the start hour goes back to the day choice", async () => {
+    const flow = await startFlow();
+    await flow.pick("book:date", "2026-11-20");
+    await flow.pick("book:sh:2026-11-20", "14");
+
+    await flow.press("Back");
+
+    expect(flow.body.type).toBe(7);
+    expect(flow.ids()).toContain("book:date");
+    expect(await bookings()).toBe("The office is free all week!");
+  });
+
+  it("from the end hour goes back to the start time of the same day", async () => {
+    const flow = await startFlow();
+    await flow.pick("book:date", "2026-11-20");
+    await flow.pick("book:sh:2026-11-20", "14");
+    await flow.press(":30");
+    await flow.pick("book:eh:2026-11-20:1430", "16");
+
+    await flow.press("Back");
+
+    expect(flow.ids()).toContain("book:sh:2026-11-20");
+    expect(flow.ids()).toContain("book:sm:2026-11-20:1430");
+    expect(await bookings()).toBe("The office is free all week!");
+  });
+});
+
+describe("/book switching the hour", () => {
+  const minuteState = (flow: Awaited<ReturnType<typeof startFlow>>, prefix: string) =>
+    allComponents(flow.body)
+      .filter((c) => c.custom_id?.startsWith(prefix))
+      .map((b) => [b.custom_id.split(":").at(-1), b.disabled ?? false]);
+
+  it("recomputes the start minutes for the new hour instead of keeping the old ones", async () => {
+    await seedBooking({ userId: "7", date: "2026-11-20", start: "09:00", end: "09:30" });
+    await seedBooking({ userId: "8", date: "2026-11-20", start: "10:15", end: "10:30" });
+    const flow = await startFlow();
+    await flow.pick("book:date", "2026-11-20");
+
+    await flow.pick("book:sh:2026-11-20", "09");
+    expect(minuteState(flow, "book:sm:")).toEqual([["0900", true], ["0915", true], ["0930", false], ["0945", false]]);
+
+    await flow.pick("book:sh:2026-11-20", "10");
+    expect(minuteState(flow, "book:sm:")).toEqual([["1000", false], ["1015", true], ["1030", false], ["1045", false]]);
+  });
+
+  it("recomputes the end minutes for the new hour instead of keeping the old ones", async () => {
+    await seedBooking({ userId: "7", date: "2026-11-20", start: "11:30", end: "12:00" });
+    const flow = await startFlow();
+    await flow.pick("book:date", "2026-11-20");
+    await flow.pick("book:sh:2026-11-20", "10");
+    await flow.press(":15");
+
+    await flow.pick("book:eh:2026-11-20:1015", "10");
+    expect(minuteState(flow, "book:em:")).toEqual([["1000", true], ["1015", true], ["1030", false], ["1045", false]]);
+
+    await flow.pick("book:eh:2026-11-20:1015", "11");
+    expect(minuteState(flow, "book:em:")).toEqual([["1100", false], ["1115", false], ["1130", false], ["1145", true]]);
+  });
+});
+
+describe("/book stale flows", () => {
+  const STALE = "That booking flow has expired. Run /book to start again.";
+
+  it.each([
+    ["a day in the past", "book:date", "2026-11-17"],
+    ["a day more than a week away", "book:date", "2026-11-26"],
+    ["something that is not a day", "book:date", "banana"],
+    ["a start hour on a past day", "book:sh:2026-11-17", "10"],
+    ["an end hour on a past day", "book:eh:2026-11-17:1000", "11"],
+    ["a start minute on a past day", "book:sm:2026-11-17:1000", undefined],
+    ["an end minute on a past day", "book:em:2026-11-17:1000:1100", undefined],
+    ["a Back to a past day", "book:back:sh:2026-11-17:10", undefined],
+    ["a step this version does not know", "book:teleport:2026-11-19", undefined],
+    ["a half-formed id", "book", undefined],
+  ])("answers privately with a helpful message for %s", async (_what, customId, value) => {
+    const body = await reply(await send(componentClick(customId, { values: value ? [value] : undefined }), { now: NOW }));
+
+    expect(body.type).toBe(4);
+    expect(body.data?.flags).toBe(64);
+    expect(body.data?.content).toBe(STALE);
+    expect(await bookings()).toBe("The office is free all week!");
+  });
+
+  it("explains when a start minute was booked by someone else since the buttons were drawn", async () => {
+    await seedBooking({ userId: "7", date: "2026-11-20", start: "14:00", end: "15:00" });
+
+    const body = await reply(await send(componentClick("book:sm:2026-11-20:1430"), { now: NOW }));
+
+    expect(body.data?.flags).toBe(64);
+    expect(body.data?.content).toBe("Sorry, that time is no longer free. Run /book to pick another time.");
+  });
+
+  it("explains when an end minute is no longer free instead of opening the modal", async () => {
+    await seedBooking({ userId: "7", date: "2026-11-20", start: "15:00", end: "16:00" });
+
+    const body = await reply(await send(componentClick("book:em:2026-11-20:1430:1545"), { now: NOW }));
+
+    expect(body.type).toBe(4);
+    expect(body.data?.content).toBe("Sorry, that time is no longer free. Run /book to pick another time.");
+  });
+
+  it("answers a submitted modal for a past day with the expired message and saves nothing", async () => {
+    const body = await reply(
+      await send(modalSubmit("book:modal:2026-11-17:1000:1100", { reason: "work", others: "no", note: null }), { now: NOW }),
+    );
+
+    expect(body.data?.flags).toBe(64);
+    expect(body.data?.content).toBe(STALE);
+    expect(await bookings()).toBe("The office is free all week!");
+  });
+});
+
+describe("/book when the time is taken before the modal is submitted", () => {
+  it("tells the user, saves nothing of theirs and keeps the other Booking", async () => {
+    const now = { now: NOW };
+    const flow = await startFlow("300");
+    await flow.pick("book:date", "2026-11-20");
+    await flow.pick("book:sh:2026-11-20", "14");
+    await flow.press(":00");
+    await flow.pick("book:eh:2026-11-20:1400", "15");
+    await flow.press(":00");
+    const modalId = flow.body.data!.custom_id!;
+
+    await send(modalSubmit(modalId, { reason: "study", others: "no", note: null }, { userId: "400" }), now);
+    const late = await reply(await send(modalSubmit(modalId, { reason: "work", others: "yes", note: null }, { userId: "300" }), now));
+
+    expect(late.type).toBe(4);
+    expect(late.data?.flags).toBe(64);
+    expect(late.data?.content).toBe("Sorry, that time is no longer free. Run /book to pick another time.");
+    expect(await bookings()).toBe("**November 20**\n2:00 PM to 3:00 PM for <@400>");
+  });
+});
+
+describe("/book today", () => {
+  const at = (iso: string) => () => new Date(iso); // Toronto is UTC-5 in November
+  const minutes = async (clockNow: () => Date, customId: string, hour: string) => {
+    const body = await reply(await send(componentClick(customId, { values: [hour] }), { now: clockNow }));
+    return allComponents(body)
+      .filter((c) => c.custom_id?.startsWith("book:sm:"))
+      .map((b) => [b.custom_id.split(":").at(-1), b.disabled ?? false]);
+  };
+
+  it("greys out minutes before the current quarter hour but not the current one", async () => {
+    expect(await minutes(NOW, "book:sh:2026-11-18", "12")).toEqual([["1200", false], ["1215", false], ["1230", false], ["1245", false]]);
+    expect(await minutes(at("2026-11-18T17:16:00Z"), "book:sh:2026-11-18", "12")).toEqual([
+      ["1200", true],
+      ["1215", false],
+      ["1230", false],
+      ["1245", false],
+    ]);
+  });
+
+  it("no longer offers the day's earlier hours once they have passed", async () => {
+    const body = await reply(await send(componentClick("book:date", { values: ["2026-11-18"] }), { now: at("2026-11-18T22:50:00Z") }));
+
+    expect(hourOptions(body, "book:sh:2026-11-18")).toEqual([
+      ["17", "5 PM"],
+      ["18", "6 PM"],
+      ["19", "7 PM"],
+      ["20", "8 PM"],
+      ["21", "9 PM"],
+      ["22", "10 PM"],
+      ["23", "11 PM"],
+    ]);
+  });
+
+  it("books the current quarter hour (12:00 at 12:01) but refuses a start that has already passed", async () => {
+    const book = (start: string) =>
+      send(modalSubmit(`book:modal:2026-11-18:${start}:1300`, { reason: "study", others: "no", note: null }), { now: NOW }).then(reply);
+
+    const tooLate = await book("1145");
+    const ok = await book("1200");
+
+    expect(tooLate.data?.flags).toBe(64);
+    expect(ok.data?.content).toBe("<@100> has booked the Office on November 18 from 12:00 PM to 1:00 PM for studying");
+    expect(await bookings()).toBe("**November 18**\n12:00 PM to 1:00 PM for <@100>");
+  });
+});
+
+describe("/book belongs to the person who started it", () => {
+  it("does not let someone else press another person's buttons", async () => {
+    const body = await reply(
+      await send(componentClick("book:date", { userId: "999", ownerId: "100", values: ["2026-11-20"] }), { now: NOW }),
+    );
+
+    expect(body.type).toBe(4);
+    expect(body.data?.flags).toBe(64);
+    expect(body.data?.content).toBe("This isn't your booking. Run /book to start your own.");
+  });
+
+  it("lets the person who started it carry on", async () => {
+    const body = await reply(
+      await send(componentClick("book:date", { userId: "100", ownerId: "100", values: ["2026-11-20"] }), { now: NOW }),
+    );
+
+    expect(body.type).toBe(7);
+  });
+});
+
 describe("/book", () => {
   it("opens a private flow that offers today and the next seven days", async () => {
     const body = await reply(await send(command("book"), { now: NOW }));
@@ -174,7 +427,7 @@ describe("/book", () => {
     );
 
     expect(response.data?.flags).toBe(64);
-    expect(response.data?.content).toContain("overlaps");
+    expect(response.data?.content).toBe("Sorry, that time is no longer free. Run /book to pick another time.");
     const listed = await reply(await send(command("bookings"), { now: NOW }));
     expect(listed.data?.embeds?.[0]?.description).toBe("**November 19**\n9:00 AM to 10:30 AM for <@7>");
   });
