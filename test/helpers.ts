@@ -40,6 +40,58 @@ export interface Reply {
     flags?: number;
     embeds?: { title?: string; description?: string }[];
     allowed_mentions?: { parse?: string[] };
+    custom_id?: string;
+    title?: string;
+    components?: any[];
+  };
+}
+
+/** Every component (recursively) in a reply's message or modal. */
+export function allComponents(body: Reply): any[] {
+  const out: any[] = [];
+  const walk = (list: any[] = []) =>
+    list.forEach((c) => {
+      out.push(c);
+      walk(c.components);
+      if (c.component) walk([c.component]);
+    });
+  walk(body.data?.components);
+  return out;
+}
+
+/** A click on a button or a choice in a select menu, made by `userId`. */
+export function componentClick(
+  customId: string,
+  opts: { userId?: string; values?: string[]; ownerId?: string } = {},
+) {
+  return {
+    type: InteractionType.MessageComponent,
+    id: "1",
+    token: "token",
+    application_id: "app",
+    guild_id: "guild",
+    member: { user: { id: opts.userId ?? "100" }, permissions: "0" },
+    message: opts.ownerId ? { interaction_metadata: { user: { id: opts.ownerId } } } : { interaction_metadata: { user: { id: opts.userId ?? "100" } } },
+    data: { custom_id: customId, component_type: opts.values ? 3 : 2, values: opts.values },
+  };
+}
+
+/** A submitted modal. `fields` maps a field's custom_id to its value (null = left empty). */
+export function modalSubmit(customId: string, fields: Record<string, string | null>, opts: { userId?: string } = {}) {
+  return {
+    type: InteractionType.ModalSubmit,
+    id: "1",
+    token: "token",
+    application_id: "app",
+    guild_id: "guild",
+    member: { user: { id: opts.userId ?? "100" }, permissions: "0" },
+    data: {
+      custom_id: customId,
+      components: Object.entries(fields).map(([id, value]) => ({
+        type: 18,
+        component: { type: id === "note" ? 4 : 21, custom_id: id, value },
+      })),
+    },
   };
 }
 

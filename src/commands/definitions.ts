@@ -4,6 +4,7 @@ import type { RESTPostAPIChatInputApplicationCommandsJSONBody } from "discord-ap
 export const definitions = [
   { name: "ping", description: "Check that Kong is alive" },
   { name: "bookings", description: "Show the Office bookings for the next 8 days" },
+  { name: "book", description: "Book the Office" },
   {
     name: "taco",
     description: "Give members tacos",

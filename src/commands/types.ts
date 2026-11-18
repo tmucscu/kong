@@ -1,4 +1,8 @@
-import type { APIChatInputApplicationCommandInteraction } from "discord-api-types/v10";
+import type {
+  APIChatInputApplicationCommandInteraction,
+  APIMessageComponentInteraction,
+  APIModalSubmitInteraction,
+} from "discord-api-types/v10";
 import type { Bindings } from "../env";
 
 export interface InteractionResponse {
@@ -10,6 +14,12 @@ export interface CommandContext {
   env: Bindings;
   now: Date;
 }
+
+/** A button/select click or a submitted modal whose custom_id starts with the handler's prefix. */
+export type ComponentHandler = (
+  interaction: APIMessageComponentInteraction | APIModalSubmitInteraction,
+  ctx: CommandContext,
+) => InteractionResponse | Promise<InteractionResponse>;
 
 export type CommandHandler = (
   interaction: APIChatInputApplicationCommandInteraction,
