@@ -77,3 +77,29 @@ export async function seedBooking(b: {
     .bind(b.userId, b.date, b.start, b.end, b.reason ?? null, b.othersCanCome ? 1 : 0)
     .run();
 }
+
+/** A `/taco <subcommand>` invocation. `users` are the Members picked in user1..user5. */
+export function taco(
+  subcommand: string,
+  opts: { from?: string; admin?: boolean; users?: string[]; bots?: string[]; reason?: string; extra?: object[] } = {},
+) {
+  const picked = [...(opts.users ?? []), ...(opts.bots ?? [])];
+  const options: object[] = picked.map((id, i) => ({ name: `user${i + 1}`, type: 6, value: id }));
+  if (opts.reason !== undefined) options.push({ name: "reason", type: 3, value: opts.reason });
+  options.push(...(opts.extra ?? []));
+
+  const base = command("taco", { userId: opts.from, admin: opts.admin });
+  return {
+    ...base,
+    data: {
+      ...base.data,
+      options: [{ name: subcommand, type: 1, options }],
+      resolved: {
+        users: Object.fromEntries([
+          ...(opts.users ?? []).map((id) => [id, { id, bot: false }]),
+          ...(opts.bots ?? []).map((id) => [id, { id, bot: true }]),
+        ]),
+      },
+    },
+  };
+}

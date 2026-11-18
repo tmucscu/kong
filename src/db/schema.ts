@@ -16,3 +16,26 @@ export const bookings = sqliteTable(
   },
   (t) => [index("bookings_date_idx").on(t.date, t.start)],
 );
+
+// The span a Taco leaderboard covers (see CONTEXT.md). The current Season is the one not yet ended.
+export const seasons = sqliteTable("seasons", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  number: integer("number").notNull().unique(),
+  name: text("name"),
+  startedAt: text("started_at").notNull(),
+  endedAt: text("ended_at"),
+});
+
+// A public shoutout from one Member to another. Dates are "YYYY-MM-DD" in America/Toronto.
+export const tacos = sqliteTable(
+  "tacos",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    seasonId: integer("season_id").notNull().references(() => seasons.id),
+    giverId: text("giver_id").notNull(),
+    recipientId: text("recipient_id").notNull(),
+    reason: text("reason").notNull(),
+    date: text("date").notNull(),
+  },
+  (t) => [index("tacos_season_recipient_idx").on(t.seasonId, t.recipientId)],
+);
