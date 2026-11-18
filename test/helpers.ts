@@ -39,6 +39,7 @@ export interface Reply {
     content?: string;
     flags?: number;
     embeds?: { title?: string; description?: string }[];
+    components?: { type: number; components: { type: number; custom_id: string; options?: { label: string; value: string }[] }[] }[];
     allowed_mentions?: { parse?: string[] };
   };
 }
@@ -53,6 +54,20 @@ export function command(name: string, opts: { userId?: string; admin?: boolean; 
     guild_id: "guild",
     member: { user: { id: opts.userId ?? "100" }, permissions: opts.admin ? String(1n << 5n) : "0" },
     data: { id: "c", name, type: 1, options: opts.options ?? [] },
+  };
+}
+
+/** A pick from a string select menu (message component) by `userId`, optionally with Manage Server. */
+export function selectMenu(customId: string, values: string[], opts: { userId?: string; admin?: boolean } = {}) {
+  return {
+    type: 3,
+    id: "2",
+    token: "token",
+    application_id: "app",
+    guild_id: "guild",
+    member: { user: { id: opts.userId ?? "100" }, permissions: opts.admin ? String(1n << 5n) : "0" },
+    message: { id: "m", flags: 64 },
+    data: { custom_id: customId, component_type: 3, values },
   };
 }
 

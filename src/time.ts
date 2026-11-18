@@ -30,3 +30,8 @@ export function formatTime(time: string): string {
   const twelve = h % 12 === 0 ? 12 : h % 12;
   return `${twelve}:${String(minute).padStart(2, "0")} ${suffix}`;
 }
+
+/** The current time as "HH:MM" in the given IANA time zone. */
+export function timeIn(timeZone: string, now: Date): string {
+  return new Intl.DateTimeFormat("en-GB", { timeZone, hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(now);
+}
