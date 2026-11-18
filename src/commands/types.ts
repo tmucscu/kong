@@ -2,6 +2,7 @@ import type {
   APIApplicationCommandAutocompleteInteraction,
   APIChatInputApplicationCommandInteraction,
   APIMessageComponentInteraction,
+  APIModalSubmitInteraction,
 } from "discord-api-types/v10";
 import type { Bindings } from "../env";
 
@@ -20,8 +21,9 @@ export type AutocompleteHandler = (
   ctx: CommandContext,
 ) => InteractionResponse | Promise<InteractionResponse>;
 
+/** A button/select click or a submitted modal whose custom_id starts with the handler's prefix. */
 export type ComponentHandler = (
-  interaction: APIMessageComponentInteraction,
+  interaction: APIMessageComponentInteraction | APIModalSubmitInteraction,
   ctx: CommandContext,
 ) => InteractionResponse | Promise<InteractionResponse>;
 

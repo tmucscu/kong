@@ -9,6 +9,11 @@ export function todayIn(timeZone: string, now: Date): string {
   return parts; // en-CA formats as YYYY-MM-DD
 }
 
+/** The wall-clock time as "HH:MM" in the given IANA time zone. */
+export function timeIn(timeZone: string, now: Date): string {
+  return new Intl.DateTimeFormat("en-GB", { timeZone, hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(now);
+}
+
 /** Adds whole days to a "YYYY-MM-DD" date. */
 export function addDays(date: string, days: number): string {
   const d = new Date(`${date}T00:00:00Z`);
@@ -29,9 +34,4 @@ export function formatTime(time: string): string {
   const suffix = h >= 12 ? "PM" : "AM";
   const twelve = h % 12 === 0 ? 12 : h % 12;
   return `${twelve}:${String(minute).padStart(2, "0")} ${suffix}`;
-}
-
-/** The current time as "HH:MM" in the given IANA time zone. */
-export function timeIn(timeZone: string, now: Date): string {
-  return new Intl.DateTimeFormat("en-GB", { timeZone, hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(now);
 }

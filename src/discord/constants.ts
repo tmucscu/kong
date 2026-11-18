@@ -4,6 +4,9 @@
 // cannot load, so it is imported for *types only* and the numbers live here.
 // Each `satisfies` clause makes the compiler reject a wrong number.
 import type {
+  ButtonStyle as ButtonKind,
+  ComponentType as ComponentKind,
+  TextInputStyle as TextInputKind,
   InteractionResponseType as ResponseType,
   InteractionType as RequestType,
 } from "discord-api-types/v10";
@@ -24,6 +27,25 @@ export const InteractionResponseType = {
   UpdateMessage: 7 satisfies ResponseType.UpdateMessage,
   ApplicationCommandAutocompleteResult: 8 satisfies ResponseType.ApplicationCommandAutocompleteResult,
   Modal: 9 satisfies ResponseType.Modal,
+} as const;
+
+export const ComponentType = {
+  ActionRow: 1 satisfies ComponentKind.ActionRow,
+  Button: 2 satisfies ComponentKind.Button,
+  StringSelect: 3 satisfies ComponentKind.StringSelect,
+  TextInput: 4 satisfies ComponentKind.TextInput,
+  Label: 18 satisfies ComponentKind.Label,
+  RadioGroup: 21 satisfies ComponentKind.RadioGroup,
+} as const;
+
+export const ButtonStyle = {
+  Primary: 1 satisfies ButtonKind.Primary,
+  Secondary: 2 satisfies ButtonKind.Secondary,
+  Danger: 4 satisfies ButtonKind.Danger,
+} as const;
+
+export const TextInputStyle = {
+  Short: 1 satisfies TextInputKind.Short,
 } as const;
 
 export const MessageFlags = {

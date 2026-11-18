@@ -8,7 +8,7 @@ describe("/unbook", () => {
 
     expect(body.data?.flags).toBe(64);
     expect(body.data?.content).toContain("1. November 18, 2:00 PM to 3:30 PM, <@100>");
-    expect(body.data?.components?.[0]?.components[0]?.options?.map((o) => o.label)).toEqual([
+    expect(body.data?.components?.[0]?.components[0]?.options?.map((o: { label: string }) => o.label)).toEqual([
       "1. Nov 18 2:00 PM to 3:30 PM",
     ]);
   });

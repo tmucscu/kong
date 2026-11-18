@@ -21,7 +21,7 @@ describe("/taco-admin remove", () => {
 
     expect(body.data?.flags).toBe(64);
     expect(select?.custom_id).toBe("taco-remove");
-    expect(select?.options.map((o) => o.label)).toEqual(["2026-11-17: ran the workshop", "2026-11-10: fixed the printer"]);
+    expect(select?.options.map((o: { label: string }) => o.label)).toEqual(["2026-11-17: ran the workshop", "2026-11-10: fixed the printer"]);
     expect(body.data?.content).toContain("2026-11-17: ran the workshop from <@102>");
     expect(body.data?.content).toContain("2026-11-10: fixed the printer from <@101>");
     expect(body.data?.allowed_mentions).toEqual({ parse: [] });
@@ -56,7 +56,7 @@ describe("/taco-admin remove limits", () => {
 
     expect(options).toHaveLength(25);
     expect(options[0].label.startsWith("2026-10-27:")).toBe(true);
-    expect(options.every((o) => o.label.length <= 100)).toBe(true);
+    expect(options.every((o: { label: string }) => o.label.length <= 100)).toBe(true);
   });
 });
 
