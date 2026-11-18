@@ -1,7 +1,21 @@
+# dependencies and build output
 node_modules
-.wrangler
-.dev.vars
-.env
 dist
-legacy-data
+
+# Cloudflare / test tooling
+.wrangler
 .vitest
+
+# secrets and local config
+.dev.vars
+.dev.vars.*
+.env
+.env.*
+
+# old bot data copied in for the migration (never commit real member data)
+legacy-data
+
+# misc
+*.log
+.DS_Store
+.claude/worktrees
