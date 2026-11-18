@@ -10,6 +10,6 @@
 - [ ] `/ping` replies in the test server
 - [x] A command-registration script targets the test or CSCU server by configuration
 - [ ] Push to `master` deploys the Worker and applies pending D1 migrations
-- [ ] All times are handled in America/Toronto from the start
+- [x] All times are handled in America/Toronto from the start
 
 **Progress:** Verified locally with tests: signature rejection, ping/pong and `/ping`. The registration script and the deploy workflow are written. Still unticked because they need ticket 01: Discord's live endpoint verification, `/ping` in the test server, and a real push-to-deploy run. Toronto-time handling arrives with the first time-based ticket (03); the `TIMEZONE` setting is in place.
