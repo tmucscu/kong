@@ -1,4 +1,7 @@
-import type { APIChatInputApplicationCommandInteraction } from "discord-api-types/v10";
+import type {
+  APIApplicationCommandAutocompleteInteraction,
+  APIChatInputApplicationCommandInteraction,
+} from "discord-api-types/v10";
 import type { Bindings } from "../env";
 
 export interface InteractionResponse {
@@ -10,6 +13,11 @@ export interface CommandContext {
   env: Bindings;
   now: Date;
 }
+
+export type AutocompleteHandler = (
+  interaction: APIApplicationCommandAutocompleteInteraction,
+  ctx: CommandContext,
+) => InteractionResponse | Promise<InteractionResponse>;
 
 export type CommandHandler = (
   interaction: APIChatInputApplicationCommandInteraction,

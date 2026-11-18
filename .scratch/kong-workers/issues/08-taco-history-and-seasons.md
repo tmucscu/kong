@@ -6,6 +6,6 @@
 
 **Status:** ready-for-agent
 
-- [ ] History defaults to the current Season
+- [x] History defaults to the current Season
 - [ ] `season:` offers the existing Seasons by number and name
-- [ ] A Member with no Tacos gets a clear message
+- [x] A Member with no Tacos gets a clear message

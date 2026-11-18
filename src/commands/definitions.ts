@@ -1,5 +1,12 @@
 import type { RESTPostAPIChatInputApplicationCommandsJSONBody } from "discord-api-types/v10";
 
+const seasonOption = {
+  type: 4 as const,
+  name: "season",
+  description: "Which season (defaults to the current one)",
+  autocomplete: true,
+};
+
 // Command definitions Discord shows in its picker. Registered by scripts/register-commands.ts.
 export const definitions = [
   { name: "ping", description: "Check that Kong is alive" },
@@ -18,7 +25,13 @@ export const definitions = [
           ...[2, 3, 4, 5].map((n) => ({ type: 6 as const, name: `user${n}`, description: "Another member" })),
         ],
       },
-      { type: 1, name: "leaderboard", description: "Show this season's taco leaderboard" },
+      { type: 1, name: "leaderboard", description: "Show a season's taco leaderboard", options: [seasonOption] },
+      {
+        type: 1,
+        name: "history",
+        description: "Show the tacos a member received",
+        options: [{ type: 6, name: "user", description: "Whose tacos to show", required: true }, seasonOption],
+      },
     ],
   },
 ] satisfies RESTPostAPIChatInputApplicationCommandsJSONBody[];

@@ -1,4 +1,4 @@
-import { NOW, reply, send, taco } from "./helpers";
+import { NOW, intOption, reply, send, taco } from "./helpers";
 
 const board = () => send(taco("leaderboard"), { now: NOW });
 
@@ -51,6 +51,13 @@ describe("/taco leaderboard", () => {
 
     expect(body.data?.embeds?.[0]?.title).toBe("🌮 Tacos: Season 1");
     expect(body.data?.embeds?.[0]?.description).toBe("No tacos yet this season!");
+  });
+
+  it("answers an unknown Season number with an ephemeral, friendly message", async () => {
+    const body = await reply(await send(taco("leaderboard", { extra: [intOption("season", 9)] }), { now: NOW }));
+
+    expect(body.data?.content).toBe("There is no Season 9. Pick one from the list.");
+    expect(body.data?.flags).toBe(64);
   });
 
   it("ranks members by tacos received, with medals for the top three", async () => {

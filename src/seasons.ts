@@ -14,5 +14,12 @@ export async function currentSeason(db: DrizzleD1Database, today: string) {
   return (await find())!;
 }
 
+/** The Season the user asked for by number, or the current one when they gave none. Undefined if it does not exist. */
+export async function chosenSeason(db: DrizzleD1Database, today: string, number: number | undefined) {
+  const current = await currentSeason(db, today);
+  if (number === undefined || number === current.number) return current;
+  return db.select().from(seasons).where(eq(seasons.number, number)).then((r) => r[0]);
+}
+
 export const seasonLabel = (s: { number: number; name: string | null }) =>
   s.name ? `Season ${s.number} (${s.name})` : `Season ${s.number}`;

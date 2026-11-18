@@ -1,11 +1,11 @@
-import { count, desc, asc, eq } from "drizzle-orm";
+import { and, count, desc, asc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import type { APIApplicationCommandInteractionDataOption } from "discord-api-types/v10";
-import { tacos } from "../db/schema";
+import { seasons, tacos } from "../db/schema";
 import { InteractionResponseType, MessageFlags } from "../discord/constants";
-import { currentSeason, seasonLabel } from "../seasons";
+import { chosenSeason, currentSeason, seasonLabel } from "../seasons";
 import { todayIn } from "../time";
-import type { CommandHandler, CommandContext, InteractionResponse } from "./types";
+import type { AutocompleteHandler, CommandHandler, CommandContext, InteractionResponse } from "./types";
 
 type Interaction = Parameters<CommandHandler>[0];
 type Sub = { name: string; options?: { name: string; value?: unknown }[] };
@@ -46,9 +46,11 @@ async function give(interaction: Interaction, sub: Sub, { env, now }: CommandCon
   };
 }
 
-async function leaderboard({ env, now }: CommandContext): Promise<InteractionResponse> {
+async function leaderboard(sub: Sub, { env, now }: CommandContext): Promise<InteractionResponse> {
   const db = drizzle(env.DB);
-  const season = await currentSeason(db, todayIn(env.TIMEZONE, now));
+  const requested = option(sub, "season") as number | undefined;
+  const season = await chosenSeason(db, todayIn(env.TIMEZONE, now), requested);
+  if (!season) return refuse(`There is no Season ${requested}. Pick one from the list.`);
 
   const rows = await db
     .select({ recipientId: tacos.recipientId, total: count() })
@@ -76,9 +78,76 @@ async function leaderboard({ env, now }: CommandContext): Promise<InteractionRes
   };
 }
 
+const EMBED_LIMIT = 4096;
+
+/** Joins lines, dropping the tail and adding "…and N more" so the text fits an embed description. */
+function fitLines(lines: string[]): string {
+  const whole = lines.join("\n");
+  if (whole.length <= EMBED_LIMIT) return whole;
+
+  const kept: string[] = [];
+  let length = 0;
+  for (const line of lines) {
+    const footer = `\n…and ${lines.length - kept.length} more`;
+    if (length + line.length + 1 + footer.length > EMBED_LIMIT) break;
+    kept.push(line);
+    length += line.length + 1;
+  }
+  return `${kept.join("\n")}\n…and ${lines.length - kept.length} more`;
+}
+
+async function history(sub: Sub, { env, now }: CommandContext): Promise<InteractionResponse> {
+  const userId = option(sub, "user")!;
+  const db = drizzle(env.DB);
+  const requested = option(sub, "season") as number | undefined;
+  const season = await chosenSeason(db, todayIn(env.TIMEZONE, now), requested);
+  if (!season) return refuse(`There is no Season ${requested}. Pick one from the list.`);
+
+  const rows = await db
+    .select()
+    .from(tacos)
+    .where(and(eq(tacos.seasonId, season.id), eq(tacos.recipientId, userId)))
+    .orderBy(desc(tacos.date), desc(tacos.id));
+
+  if (!rows.length) {
+    return {
+      type: InteractionResponseType.ChannelMessageWithSource,
+      data: { content: `<@${userId}> has no tacos this season`, allowed_mentions: { parse: [] } },
+    };
+  }
+
+  return {
+    type: InteractionResponseType.ChannelMessageWithSource,
+    data: {
+      embeds: [{
+        title: `🌮 Tacos for Season ${season.number}`,
+        description: fitLines(rows.map((t) => `${t.date}: ${t.reason} from <@${t.giverId}>`)),
+        color: ORANGE,
+      }],
+      allowed_mentions: { parse: [] },
+    },
+  };
+}
+
+export const tacoAutocomplete: AutocompleteHandler = async (interaction, { env, now }) => {
+  const db = drizzle(env.DB);
+  await currentSeason(db, todayIn(env.TIMEZONE, now));
+  const sub = interaction.data.options[0] as unknown as { options?: { focused?: boolean; value?: unknown }[] };
+  const typed = String(sub.options?.find((o) => o.focused)?.value ?? "").toLowerCase();
+
+  const all = await db.select().from(seasons).orderBy(desc(seasons.number));
+  const choices = all
+    .map((s) => ({ name: seasonLabel(s), value: s.number }))
+    .filter((c) => c.name.toLowerCase().includes(typed))
+    .slice(0, 25);
+
+  return { type: InteractionResponseType.ApplicationCommandAutocompleteResult, data: { choices } };
+};
+
 export const taco: CommandHandler = async (interaction, ctx) => {
   const sub = interaction.data.options?.[0] as APIApplicationCommandInteractionDataOption & Sub;
   if (sub.name === "give") return give(interaction, sub, ctx);
-  if (sub.name === "leaderboard") return leaderboard(ctx);
+  if (sub.name === "history") return history(sub, ctx);
+  if (sub.name === "leaderboard") return leaderboard(sub, ctx);
   throw new Error(`Unknown taco subcommand: ${sub.name}`);
 };

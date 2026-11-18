@@ -22,6 +22,7 @@ export const InteractionResponseType = {
   DeferredChannelMessageWithSource: 5 satisfies ResponseType.DeferredChannelMessageWithSource,
   DeferredMessageUpdate: 6 satisfies ResponseType.DeferredMessageUpdate,
   UpdateMessage: 7 satisfies ResponseType.UpdateMessage,
+  ApplicationCommandAutocompleteResult: 8 satisfies ResponseType.ApplicationCommandAutocompleteResult,
   Modal: 9 satisfies ResponseType.Modal,
 } as const;
 
