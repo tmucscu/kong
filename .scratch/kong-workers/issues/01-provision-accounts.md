@@ -11,3 +11,5 @@
 - [ ] Cloudflare account owned by CSCU, with a D1 database created
 - [ ] GitHub repo secrets set for the Cloudflare API token and the Discord application ID, public key and bot token
 - [ ] A short setup note records which values live where (no secret values written down)
+
+**Progress:** The setup checklist is written in `docs/setup.md`. The boxes above stay unticked until a person creates the accounts and secrets.
