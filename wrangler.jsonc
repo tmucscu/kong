@@ -10,8 +10,7 @@
     {
       "binding": "DB",
       "database_name": "kong",
-      // Replace with the real id once the D1 database exists (ticket 01).
-      "database_id": "00000000-0000-0000-0000-000000000000",
+      "database_id": "52dc1527-a48d-4b74-852e-1b5572bfc683",
       "migrations_dir": "migrations"
     }
   ]
