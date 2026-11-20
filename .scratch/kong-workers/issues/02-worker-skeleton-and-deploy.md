@@ -12,4 +12,6 @@
 - [ ] Push to `master` deploys the Worker and applies pending D1 migrations
 - [x] All times are handled in America/Toronto from the start
 
+The manual deploy on `feat/workers` applied remote D1 migrations and published the Worker in [run #11](https://github.com/tmucscu/kong/actions/runs/44646081796). An unsigned request to the published endpoint returned 401.
+
 **Progress:** Verified locally with tests: signature rejection, ping/pong and `/ping`. The registration script and the deploy workflow are written. Still unticked because they need ticket 01: Discord's live endpoint verification, `/ping` in the test server, and a real push-to-deploy run. Toronto-time handling arrives with the first time-based ticket (03); the `TIMEZONE` setting is in place.

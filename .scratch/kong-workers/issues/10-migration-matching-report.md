@@ -6,8 +6,10 @@
 
 **Status:** ready-for-agent
 
-- [ ] Names match using the old roster and the server's current member nicknames, ignoring case (tacos were stored UPPERCASE)
-- [ ] Both Taco recipients and givers are matched
-- [ ] Booking names are matched the same way, for future Bookings only
-- [ ] The unmatched file lists each unmatched name and how many records depend on it; entries left unfilled are dropped at import
-- [ ] A summary prints how many records matched and how many didn't
+- [x] Names match using the old roster and the server's current member nicknames, ignoring case (tacos were stored UPPERCASE)
+- [x] Both Taco recipients and givers are matched
+- [x] Booking names are matched the same way, for future Bookings only
+- [x] The unmatched file lists each unmatched name and how many records depend on it; entries left unfilled are dropped at import
+- [x] A summary prints how many records matched and how many didn't
+
+Verified with a Discord member fixture and a roster-only dry run of the legacy snapshot. Run against the live CSCU member list before cutover.

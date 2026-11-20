@@ -29,3 +29,22 @@ Kong needs a Discord application and a Cloudflare account. No secret values are 
 ## Registering commands
 
 `DISCORD_GUILD_ID=<id> pnpm register` registers to one server. Use the test server id while developing and the CSCU id at cutover.
+
+## Migrating the legacy data
+
+Put the exports from `env/members.json`, `booking/bookings.json`, and `taco/tacos.json` in the gitignored `legacy-data/` directory. Set the CSCU guild ID and a bot token with access to the CSCU member list, then generate the report:
+
+```sh
+pnpm migrate:legacy report
+```
+
+Review `legacy-data/unmatched.json`. Under `unmatched`, enter each confirmed Discord ID as a string in `userId`. Leave it blank or delete the entry to drop its dependent records. The `matches` object records matches from the dry run.
+
+At cutover, stop the legacy bot before taking the final export. Generate a fresh report in the final export directory and carry over only reviewed resolutions that still apply. Generate the SQL and compare the reported counts with the final report before importing:
+
+```sh
+pnpm migrate:legacy import
+pnpm exec wrangler d1 execute kong --remote --file legacy-data/import.sql
+```
+
+The import requires empty bookings and tacos tables and allows an existing open Season 1. It preserves Taco dates and includes Bookings whose end times have yet to pass in Toronto. Keep the generated files with the private export. After import, check `/bookings` and `/taco leaderboard` in CSCU.

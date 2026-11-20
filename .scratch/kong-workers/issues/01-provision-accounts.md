@@ -8,7 +8,7 @@
 
 - [ ] Test Discord application created, with the Server Members intent enabled
 - [ ] Private test server exists and the test bot is invited
-- [ ] Cloudflare account owned by CSCU, with a D1 database created
+- [x] Cloudflare account owned by CSCU, with a D1 database created
 - [ ] GitHub repo secrets set for the Cloudflare API token and the Discord application ID, public key and bot token
 - [x] A short setup note records which values live where (no secret values written down)
 

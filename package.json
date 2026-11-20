@@ -11,6 +11,7 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate:local": "wrangler d1 migrations apply kong --local",
     "db:migrate:remote": "wrangler d1 migrations apply kong --remote",
+    "migrate:legacy": "node --experimental-strip-types --env-file-if-exists=.dev.vars scripts/migrate-legacy.mjs",
     "register": "node --experimental-strip-types scripts/register-commands.ts"
   },
   "dependencies": {
