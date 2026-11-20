@@ -25,7 +25,7 @@ pnpm typecheck
 pnpm db:generate # after changing src/db/schema.ts
 ```
 
-Account and secret setup is in `docs/setup.md`. Register slash commands to one server with `DISCORD_GUILD_ID=<id> pnpm register`.
+Account and secret setup is in `docs/setup.md`. Register slash commands globally with `pnpm register --global`, or for a test server with `DISCORD_GUILD_ID=<id> pnpm register`.
 
 ## Deploying
 

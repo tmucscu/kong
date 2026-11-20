@@ -43,7 +43,8 @@ function indexNames(roster, discordMembers) {
     for (const [id, name] of Object.entries(role)) add(id, name);
   }
   for (const { nick, user } of discordMembers) {
-    add(user.id, nick || user.username);
+    add(user.id, nick);
+    add(user.id, user.username);
     add(user.id, user.global_name);
   }
   return names;
