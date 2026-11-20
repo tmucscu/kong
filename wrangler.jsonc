@@ -1,0 +1,17 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "kong",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-11-01",
+  "vars": {
+    "TIMEZONE": "America/Toronto"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "kong",
+      "database_id": "52dc1527-a48d-4b74-852e-1b5572bfc683",
+      "migrations_dir": "migrations"
+    }
+  ]
+}

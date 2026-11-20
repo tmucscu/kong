@@ -1,0 +1,31 @@
+{
+  "name": "kong",
+  "private": true,
+  "packageManager": "pnpm@11.11.0",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "test": "WRANGLER_LOG_PATH=.wrangler/logs vitest run",
+    "typecheck": "tsc --noEmit",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate:local": "wrangler d1 migrations apply kong --local",
+    "db:migrate:remote": "wrangler d1 migrations apply kong --remote",
+    "migrate:legacy": "node --experimental-strip-types --env-file-if-exists=.dev.vars scripts/migrate-legacy.mjs",
+    "register": "node --experimental-strip-types --env-file-if-exists=.dev.vars scripts/register-commands.ts"
+  },
+  "dependencies": {
+    "discord-api-types": "^0.38.59",
+    "discord-interactions": "^4.4.0",
+    "drizzle-orm": "^0.45.4",
+    "hono": "^4.13.19"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-plugin": "^1.8.3",
+    "@cloudflare/workers-types": "^5.20261117.1",
+    "drizzle-kit": "^0.31.11",
+    "typescript": "^7.0.2",
+    "vitest": "^5.1.0",
+    "wrangler": "^4.165.0"
+  }
+}

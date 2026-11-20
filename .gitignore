@@ -1,9 +1,21 @@
-**/__pycache__
-nohup.out
+# dependencies and build output
+node_modules
+dist
 
-env
-archive
-booking/bookings.json
-announcements/announcements.json
-kong.log
-taco/tacos.json
+# Cloudflare / test tooling
+.wrangler
+.vitest
+
+# secrets and local config
+.dev.vars
+.dev.vars.*
+.env
+.env.*
+
+# old bot data copied in for the migration (never commit real member data)
+legacy-data
+
+# misc
+*.log
+.DS_Store
+.claude/worktrees
