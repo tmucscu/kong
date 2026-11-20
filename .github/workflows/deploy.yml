@@ -3,6 +3,7 @@ name: Deploy Kong
 on:
   push:
     branches: [master]
+  workflow_dispatch:
 
 concurrency:
   group: deploy
